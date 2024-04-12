@@ -1,5 +1,6 @@
-# pip install selenium unstructured faiss-cpu sentence-transformers google-generativeai langchain-google-genai streamlit
+# allows you to find information from articles provided as URLs. Runs on streamlit
 
+# pip install selenium unstructured faiss-cpu sentence-transformers google-generativeai langchain-google-genai streamlit
 from api_keys import google_api_key
 
 from langchain.chains import RetrievalQAWithSourcesChain
