@@ -19,13 +19,8 @@ file_path = "vector_index.pkl"
 def main():
     st.set_page_config(page_title="Article research tool", page_icon="🔎")
     st.title("Article research tool")
-    google_api_key = st.sidebar.text_input("Input your Google generative AI API key")
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-pro",
-        google_api_key=google_api_key,
-        temperature=0.7,
-    )
+    google_api_key = st.sidebar.text_input("Input your Google generative AI API key")
 
     st.sidebar.title("Paste article URLs")
 
@@ -38,7 +33,7 @@ def main():
     placeholder_element = st.empty()
 
     process_button_clicked = st.sidebar.button("Process URLs")
-    if google_api_key and process_button_clicked:
+    if process_button_clicked:
         # load data
         loader = SeleniumURLLoader(urls=urls)
         placeholder_element.text("Loading data...")
@@ -68,10 +63,12 @@ def main():
             pickle.dump(vector_index, f)
 
     query = placeholder_element.text_input("Question: ")
-    if query:
+    if google_api_key and query:
         if os.path.exists(file_path):
             with open(file_path, "rb") as f:
                 vector_index = pickle.load(f)
+
+        llm = load_llm(google_api_key)
         chain = RetrievalQAWithSourcesChain.from_llm(
             llm=llm, retriever=vector_index.as_retriever()
         )
@@ -85,6 +82,15 @@ def main():
             sources_list = sources.split("\n")
             for source in sources_list:
                 st.write(source)
+
+
+def load_llm(google_api_key):
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-pro",
+        google_api_key=google_api_key,
+        temperature=0.7,
+    )
+    return llm
 
 
 if __name__ == "__main__":
