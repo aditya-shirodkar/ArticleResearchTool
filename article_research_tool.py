@@ -1,7 +1,6 @@
 # allows you to find information from articles provided as URLs. Runs on streamlit
 
 # pip install selenium unstructured faiss-cpu sentence-transformers google-generativeai langchain-google-genai streamlit
-from api_keys import google_api_key
 
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -14,19 +13,20 @@ import streamlit as st
 import os
 import pickle
 
-os.environ["GOOGLE_API_KEY"] = google_api_key
 file_path = "vector_index.pkl"
-
-llm = ChatGoogleGenerativeAI(
-    model="gemini-pro",
-    google_api_key=google_api_key,
-    temperature=0.7,
-)
 
 
 def main():
     st.set_page_config(page_title="Article research tool", page_icon="🔎")
     st.title("Article research tool")
+    google_api_key = st.sidebar.text_input("Input your Google generative AI API key")
+
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-pro",
+        google_api_key=google_api_key,
+        temperature=0.7,
+    )
+
     st.sidebar.title("Paste article URLs")
 
     urls = []
@@ -38,7 +38,7 @@ def main():
     placeholder_element = st.empty()
 
     process_button_clicked = st.sidebar.button("Process URLs")
-    if process_button_clicked:
+    if google_api_key and process_button_clicked:
         # load data
         loader = SeleniumURLLoader(urls=urls)
         placeholder_element.text("Loading data...")
@@ -72,19 +72,19 @@ def main():
         if os.path.exists(file_path):
             with open(file_path, "rb") as f:
                 vector_index = pickle.load(f)
-                chain = RetrievalQAWithSourcesChain.from_llm(
-                    llm=llm, retriever=vector_index.as_retriever()
-                )
-                output = chain({"question": query}, return_only_outputs=True)
-                st.header("Answer: ")
-                st.subheader(output["answer"])
+        chain = RetrievalQAWithSourcesChain.from_llm(
+            llm=llm, retriever=vector_index.as_retriever()
+        )
+        output = chain({"question": query}, return_only_outputs=True)
+        st.header("Answer:")
+        st.write(output["answer"])
 
-                sources = output.get("sources", "")
-                if sources:
-                    st.subheader("Sources: ")
-                    sources_list = sources.split("\n")
-                    for source in sources_list:
-                        st.write(source)
+        sources = output.get("sources", "")
+        if sources:
+            st.subheader("Sources: ")
+            sources_list = sources.split("\n")
+            for source in sources_list:
+                st.write(source)
 
 
 if __name__ == "__main__":
